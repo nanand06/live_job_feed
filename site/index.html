@@ -57,6 +57,7 @@ h1{font-size:22px;font-weight:700;letter-spacing:-.01em;margin:0;text-wrap:balan
 .tag{font-family:var(--mono);font-size:11px;padding:1px 7px;border-radius:4px;white-space:nowrap}
 .tag.sw{background:var(--sw-soft);color:var(--sw)} .tag.ml{background:var(--ml-soft);color:var(--ml)}
 .tag.ng{background:var(--accent-soft);color:var(--accent)}
+.tag.emb{background:var(--chip);color:var(--muted)}
 .time{font-family:var(--mono);font-size:11px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums;padding-top:3px}
 .empty{padding:40px 16px;text-align:center;color:var(--muted)}
 .note{margin-top:28px;font-size:13px;color:var(--muted);max-width:62ch}
@@ -85,6 +86,7 @@ h1{font-size:22px;font-weight:700;letter-spacing:-.01em;margin:0;text-wrap:balan
       <span class="lbl" style="margin-left:8px">Area</span>
       <button class="chip" id="f-sw" data-f="cat" data-v="Software" aria-pressed="true">Software</button>
       <button class="chip" id="f-ml" data-f="cat" data-v="AI/ML/Data" aria-pressed="true">AI / ML / Data</button>
+      <button class="chip" id="f-emb" data-f="cat" data-v="Embedded" aria-pressed="true">Embedded</button>
     </div>
     <div class="row">
       <span class="lbl">Posted</span>
@@ -98,12 +100,12 @@ h1{font-size:22px;font-weight:700;letter-spacing:-.01em;margin:0;text-wrap:balan
 
   <div id="feed"><div class="empty">Loading postings…</div></div>
 
-  <p class="note">Source: the SimplifyJobs / Pitt CSC <a href="https://github.com/SimplifyJobs/Summer2027-Internships">Summer 2027 Internships</a> and <a href="https://github.com/SimplifyJobs/New-Grad-Positions">New Grad Positions</a> lists, filtered to Software and AI/ML/Data roles with at least one US location. Simplify adds roles in batches, mostly around 6 PM, 8–9 PM and 10 AM ET; this page refreshes shortly after each batch (about 7:05 PM, 9:35 PM, 10:50 AM, 2:50 AM and 5:50 AM ET). The time shown is when a role reached the list, which can trail the company's own posting by several hours. Checkboxes are saved only in this browser.</p>
+  <p class="note">Source: the SimplifyJobs / Pitt CSC <a href="https://github.com/SimplifyJobs/Summer2027-Internships">Summer 2027 Internships</a> and <a href="https://github.com/SimplifyJobs/New-Grad-Positions">New Grad Positions</a> lists, filtered to Software, AI/ML/Data and embedded/firmware roles with at least one US location. Simplify adds roles in batches, mostly around 6 PM, 8–9 PM and 10 AM ET; this page refreshes shortly after each batch (about 7:05 PM, 9:35 PM, 10:50 AM, 2:50 AM and 5:50 AM ET). The time shown is when a role reached the list, which can trail the company's own posting by several hours. Checkboxes are saved only in this browser.</p>
 </div>
 
 <script>
 (function(){
-  var state = { kind: {"Intern":true,"New Grad":true}, cat: {"Software":true,"AI/ML/Data":true}, days: 7, hide: false, q: "" };
+  var state = { kind: {"Intern":true,"New Grad":true}, cat: {"Software":true,"AI/ML/Data":true,"Embedded":true}, days: 7, hide: false, q: "" };
   var seen = {};
   try { seen = JSON.parse(localStorage.getItem("seen") || "{}"); } catch(e) { seen = {}; }
   function saveSeen(){ try { localStorage.setItem("seen", JSON.stringify(seen)); } catch(e){} }
@@ -137,7 +139,7 @@ h1{font-size:22px;font-weight:700;letter-spacing:-.01em;margin:0;text-wrap:balan
         html += '<section class="day"><h2>' + k + ' <span>' + dayCount + '</span></h2><div class="list">';
         cur = k;
       }
-      var catCls = r.cat === "Software" ? "sw" : "ml";
+      var catCls = r.cat === "Software" ? "sw" : r.cat === "Embedded" ? "emb" : "ml";
       html += '<div class="job' + (seen[r.url] ? " seen" : "") + '" data-i="' + i + '">' +
         '<input type="checkbox" id="c' + i + '" aria-label="Mark as seen"' + (seen[r.url] ? " checked" : "") + '>' +
         '<div class="main"><a class="title" href="' + esc(r.url) + '" target="_blank" rel="noopener">' + esc(r.title) + '</a> <span class="co">· ' + esc(r.company) + '</span>' +

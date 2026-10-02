@@ -9,6 +9,8 @@ from datetime import datetime, timezone, timedelta
 
 REPOS = {"Intern": "Summer2027-Internships", "New Grad": "New-Grad-Positions"}
 CATS = {"software", "ai/ml/data", "software engineering", "data science, ai & machine learning"}
+# Simplify files embedded/firmware roles under "Hardware"; keep the software-flavoured ones.
+EMBEDDED_WORDS = ("embedded", "firmware", "software")
 ET = timezone(timedelta(hours=-4))
 
 US_STATES = set("AL AK AZ AR CA CO CT DE FL GA HI ID IL IN IA KS KY LA ME MD MA MI MN MS MO MT NE NV NH NJ NM NY NC ND OH OK OR PA RI SC SD TN TX UT VT VA WA WV WI WY DC PR".split())
@@ -30,7 +32,8 @@ def fetch(hours):
         data = json.load(urllib.request.urlopen(url, timeout=120))
         for l in data:
             if not (l.get("active") and l.get("is_visible")): continue
-            if l.get("category", "").lower() not in CATS: continue
+            cat = l.get("category", "").lower()
+            if cat not in CATS and not (cat == "hardware" and any(w in l["title"].lower() for w in EMBEDDED_WORDS)): continue
             ts = l.get("date_posted", 0)  # original posting date; ignore later edits to the entry
             if ts < cutoff: continue
             us = [x for x in l.get("locations", []) if is_us(x)]
@@ -41,7 +44,9 @@ def fetch(hours):
     return rows
 
 def norm_cat(c):
-    return "AI/ML/Data" if "data" in c.lower() or "ml" in c.lower() else "Software"
+    c = c.lower()
+    if c == "hardware": return "Embedded"
+    return "AI/ML/Data" if "data" in c or "ml" in c else "Software"
 
 if len(sys.argv) >= 2 and sys.argv[1] == "--json":
     days = float(sys.argv[2]); out = sys.argv[3]
