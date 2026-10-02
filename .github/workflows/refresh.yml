@@ -47,7 +47,11 @@ jobs:
             echo "No change in jobs.json"
           else
             git commit -m "Refresh jobs.json ($(date -u +'%Y-%m-%d %H:%M UTC'))"
-            git push
+            # Another run may have pushed meanwhile (manual kick + cron): rebase and retry.
+            for i in 1 2 3; do
+              git push && break
+              git pull --rebase -X theirs origin main || exit 1
+            done
           fi
 
       - uses: actions/configure-pages@v5
