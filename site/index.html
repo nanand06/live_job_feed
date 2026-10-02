@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Intern Radar</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one column feed grouped by day, sticky filter bar; a job board scanned top-down, newest first. */
+:root{
+  --bg:#f6f7f4; --panel:#ffffff; --fg:#17201b; --muted:#5e6b63; --line:#d9ded9;
+  --accent:#0f6e4f; --accent-soft:#dff0e8; --chip:#eef1ec; --chip-on:#17201b; --chip-on-fg:#f6f7f4;
+  --sw:#2457a6; --sw-soft:#e2ebf9; --ml:#8a4a10; --ml-soft:#f8e9d8;
+  --font:"Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#121613; --panel:#1a201c; --fg:#e8ece8; --muted:#97a39b; --line:#2c352f;
+  --accent:#5fcf9f; --accent-soft:#163a2c; --chip:#232b26; --chip-on:#e8ece8; --chip-on-fg:#121613;
+  --sw:#8db4f2; --sw-soft:#1c2a42; --ml:#f0b27a; --ml-soft:#3b2816; color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#121613; --panel:#1a201c; --fg:#e8ece8; --muted:#97a39b; --line:#2c352f;
+  --accent:#5fcf9f; --accent-soft:#163a2c; --chip:#232b26; --chip-on:#e8ece8; --chip-on-fg:#121613;
+  --sw:#8db4f2; --sw-soft:#1c2a42; --ml:#f0b27a; --ml-soft:#3b2816; color-scheme:dark }
+
+body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:15px;line-height:1.45;margin:0}
+.wrap{max-width:860px;margin:0 auto;padding-inline:16px;padding-block:20px 56px}
+header{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 16px;margin-bottom:14px}
+h1{font-size:22px;font-weight:700;letter-spacing:-.01em;margin:0;text-wrap:balance}
+.meta{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.meta b{color:var(--fg);font-weight:500}
+
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:8px 10px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:8px}
+.row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.search{flex:1 1 220px;min-width:0;font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--fg)}
+.search:focus{outline:2px solid var(--accent);outline-offset:1px}
+.chip{font:inherit;font-size:13px;font-weight:500;padding:5px 10px;border-radius:999px;border:1px solid transparent;background:var(--chip);color:var(--fg);cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--chip-on);color:var(--chip-on-fg)}
+.chip:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.lbl{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-right:2px}
+.count{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+
+.day{margin-top:22px}
+.day h2{font-family:var(--mono);font-size:12px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 8px;display:flex;gap:10px;align-items:baseline}
+.day h2 span{font-variant-numeric:tabular-nums}
+.list{display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.job{display:grid;grid-template-columns:auto 1fr auto;gap:4px 12px;padding:10px 12px;border-top:1px solid var(--line);align-items:start}
+.job:first-child{border-top:0}
+.job.seen{opacity:.5}
+.job input{margin:4px 0 0;accent-color:var(--accent)}
+.main{min-width:0}
+.title{font-weight:600;color:var(--fg);text-decoration:none}
+.title:hover{text-decoration:underline;text-decoration-color:var(--accent)}
+.co{font-weight:500;color:var(--muted)}
+.sub{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:13px;color:var(--muted);margin-top:2px}
+.sub .loc{min-width:0;overflow-wrap:anywhere}
+.tag{font-family:var(--mono);font-size:11px;padding:1px 7px;border-radius:4px;white-space:nowrap}
+.tag.sw{background:var(--sw-soft);color:var(--sw)} .tag.ml{background:var(--ml-soft);color:var(--ml)}
+.tag.ng{background:var(--accent-soft);color:var(--accent)}
+.time{font-family:var(--mono);font-size:11px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums;padding-top:3px}
+.empty{padding:40px 16px;text-align:center;color:var(--muted)}
+.note{margin-top:28px;font-size:13px;color:var(--muted);max-width:62ch}
+.note a{color:var(--accent)}
+@media (max-width:480px){ .job{grid-template-columns:auto 1fr} .time{grid-column:2;padding-top:0} }
+@media (prefers-reduced-motion:no-preference){ .job{transition:opacity .15s} }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <h1>Intern Radar</h1>
+    <div class="meta" id="meta">Loading…</div>
+  </header>
+
+  <div class="bar">
+    <div class="row">
+      <input class="search" id="q" type="search" placeholder="Search company, title, location" autocomplete="off">
+      <span class="count" id="count"></span>
+    </div>
+    <div class="row">
+      <span class="lbl">Type</span>
+      <button class="chip" id="f-intern" data-f="kind" data-v="Intern" aria-pressed="true">Intern</button>
+      <button class="chip" id="f-ng" data-f="kind" data-v="New Grad" aria-pressed="true">New Grad</button>
+      <span class="lbl" style="margin-left:8px">Area</span>
+      <button class="chip" id="f-sw" data-f="cat" data-v="Software" aria-pressed="true">Software</button>
+      <button class="chip" id="f-ml" data-f="cat" data-v="AI/ML/Data" aria-pressed="true">AI / ML / Data</button>
+    </div>
+    <div class="row">
+      <span class="lbl">Posted</span>
+      <button class="chip" id="d-1" data-f="days" data-v="1">24h</button>
+      <button class="chip" id="d-3" data-f="days" data-v="3">3 days</button>
+      <button class="chip" id="d-7" data-f="days" data-v="7" aria-pressed="true">7 days</button>
+      <button class="chip" id="d-14" data-f="days" data-v="14">14 days</button>
+      <button class="chip" id="f-hide" data-f="hide" aria-pressed="false" style="margin-left:auto">Hide checked</button>
+    </div>
+  </div>
+
+  <div id="feed"><div class="empty">Loading postings…</div></div>
+
+  <p class="note">Source: the SimplifyJobs / Pitt CSC <a href="https://github.com/SimplifyJobs/Summer2027-Internships">Summer 2027 Internships</a> and <a href="https://github.com/SimplifyJobs/New-Grad-Positions">New Grad Positions</a> lists, filtered to Software and AI/ML/Data roles with at least one US location. Simplify adds roles in batches, mostly around 6 PM, 8–9 PM and 10 AM ET; this page refreshes shortly after each batch (about 7:05 PM, 9:35 PM, 10:50 AM, 2:50 AM and 5:50 AM ET). The time shown is when a role reached the list, which can trail the company's own posting by several hours. Checkboxes are saved only in this browser.</p>
+</div>
+
+<script>
+(function(){
+  var state = { kind: {"Intern":true,"New Grad":true}, cat: {"Software":true,"AI/ML/Data":true}, days: 7, hide: false, q: "" };
+  var seen = {};
+  try { seen = JSON.parse(localStorage.getItem("seen") || "{}"); } catch(e) { seen = {}; }
+  function saveSeen(){ try { localStorage.setItem("seen", JSON.stringify(seen)); } catch(e){} }
+  try { var sd = localStorage.getItem("days"); if (sd) { state.days = +sd; } } catch(e){}
+
+  var roles = [], generated = 0;
+  var feed = document.getElementById("feed"), count = document.getElementById("count"), meta = document.getElementById("meta");
+  var ET = { timeZone: "America/New_York" };
+
+  function fmtTime(ts){ return new Date(ts*1000).toLocaleTimeString("en-US", Object.assign({hour:"numeric",minute:"2-digit"}, ET)); }
+  function dayKey(ts){ return new Date(ts*1000).toLocaleDateString("en-US", Object.assign({weekday:"short",month:"short",day:"numeric"}, ET)); }
+  function ago(ts){ var m = Math.round((Date.now()/1000 - ts)/60); if (m < 60) return m + " min ago"; var h = Math.round(m/60); if (h < 48) return h + " h ago"; return Math.round(h/24) + " days ago"; }
+  function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); }
+
+  function render(){
+    var cutoff = Date.now()/1000 - state.days*86400, q = state.q.trim().toLowerCase();
+    var shown = roles.filter(function(r){
+      if (!state.kind[r.kind] || !state.cat[r.cat] || r.ts < cutoff) return false;
+      if (state.hide && seen[r.url]) return false;
+      if (q && (r.company + " " + r.title + " " + r.locs.join(" ")).toLowerCase().indexOf(q) < 0) return false;
+      return true;
+    });
+    count.textContent = shown.length + " of " + roles.length;
+    if (!shown.length) { feed.innerHTML = '<div class="empty">Nothing matches. Widen the window or clear the search.</div>'; return; }
+    var html = "", cur = null, n = 0;
+    shown.forEach(function(r, i){
+      var k = dayKey(r.ts);
+      if (k !== cur) {
+        if (cur !== null) html += "</div></section>";
+        var dayCount = shown.filter(function(x){ return dayKey(x.ts) === k; }).length;
+        html += '<section class="day"><h2>' + k + ' <span>' + dayCount + '</span></h2><div class="list">';
+        cur = k;
+      }
+      var catCls = r.cat === "Software" ? "sw" : "ml";
+      html += '<div class="job' + (seen[r.url] ? " seen" : "") + '" data-i="' + i + '">' +
+        '<input type="checkbox" id="c' + i + '" aria-label="Mark as seen"' + (seen[r.url] ? " checked" : "") + '>' +
+        '<div class="main"><a class="title" href="' + esc(r.url) + '" target="_blank" rel="noopener">' + esc(r.title) + '</a> <span class="co">· ' + esc(r.company) + '</span>' +
+        '<div class="sub"><span class="tag ' + catCls + '">' + esc(r.cat) + '</span>' + (r.kind === "New Grad" ? '<span class="tag ng">New Grad</span>' : "") +
+        '<span class="loc">' + esc(r.locs.slice(0,3).join(" · ") + (r.locs.length > 3 ? " +" + (r.locs.length-3) : "")) + '</span>' +
+        (r.terms && r.terms.length && r.terms[0] !== "N/A" ? '<span>' + esc(r.terms.slice(0,2).join(", ")) + '</span>' : "") + '</div></div>' +
+        '<span class="time" title="' + esc(new Date(r.ts*1000).toLocaleString("en-US", ET)) + '">' + fmtTime(r.ts) + '</span></div>';
+    });
+    html += "</div></section>";
+    feed.innerHTML = html;
+    feed.querySelectorAll(".job input").forEach(function(cb){
+      cb.addEventListener("change", function(){
+        var job = cb.closest(".job"), r = shown[+job.dataset.i];
+        if (cb.checked) seen[r.url] = 1; else delete seen[r.url];
+        saveSeen(); job.classList.toggle("seen", cb.checked);
+        if (state.hide && cb.checked) render();
+      });
+    });
+  }
+
+  document.querySelectorAll(".chip").forEach(function(b){
+    b.addEventListener("click", function(){
+      var f = b.dataset.f, v = b.dataset.v;
+      if (f === "days") { state.days = +v; document.querySelectorAll('[data-f="days"]').forEach(function(x){ x.setAttribute("aria-pressed", x === b); }); try { localStorage.setItem("days", v); } catch(e){} }
+      else if (f === "hide") { state.hide = !state.hide; b.setAttribute("aria-pressed", state.hide); }
+      else { state[f][v] = !state[f][v]; b.setAttribute("aria-pressed", state[f][v]); }
+      render();
+    });
+  });
+  document.querySelectorAll('[data-f="days"]').forEach(function(x){ x.setAttribute("aria-pressed", +x.dataset.v === state.days); });
+  document.getElementById("q").addEventListener("input", function(e){ state.q = e.target.value; render(); });
+
+  fetch("jobs.json", {cache:"no-store"}).then(function(r){ return r.json(); }).then(function(d){
+    roles = d.roles; generated = d.generated;
+    meta.innerHTML = "Updated <b>" + ago(generated) + "</b> · " + roles.length + " roles in " + d.days + " days";
+    render();
+  }).catch(function(){ feed.innerHTML = '<div class="empty">Could not load postings. Reload the page.</div>'; meta.textContent = ""; });
+})();
+</script>
+</body>
+</html>

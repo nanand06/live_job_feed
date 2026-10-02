@@ -1,0 +1,57 @@
+name: Refresh job feed
+
+on:
+  schedule:
+    # Shortly after each SimplifyJobs scrape batch. Times are UTC; the ET
+    # equivalents below assume EDT (UTC-4). During EST (Nov–Mar) they run
+    # an hour later in ET, which still lands after each batch.
+    - cron: "5 23 * * *"   # 7:05 PM ET  — after the 6 PM batch (biggest)
+    - cron: "5 2 * * *"    # 10:05 PM ET — after the 8–9 PM batch
+    - cron: "5 15 * * *"   # 11:05 AM ET — after the 10 AM batch
+    - cron: "5 7 * * *"    # 3:05 AM ET
+    - cron: "5 10 * * *"   # 6:05 AM ET
+  workflow_dispatch:       # "Run workflow" button in the Actions tab
+  push:
+    branches: [main]
+    paths: [job_check.py, site/index.html, .github/workflows/refresh.yml]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build site/jobs.json (last 14 days, US, Software + AI/ML/Data)
+        run: python3 job_check.py --json 14 site/jobs.json
+
+      - name: Commit refreshed data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add site/jobs.json
+          if git diff --cached --quiet; then
+            echo "No change in jobs.json"
+          else
+            git commit -m "Refresh jobs.json ($(date -u +'%Y-%m-%d %H:%M UTC'))"
+            git push
+          fi
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deploy
+        uses: actions/deploy-pages@v4
