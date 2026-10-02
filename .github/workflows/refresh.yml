@@ -5,12 +5,13 @@ on:
     # Shortly after each SimplifyJobs scrape batch. Times are UTC; the ET
     # equivalents below assume EDT (UTC-4). During EST (Nov–Mar) they run
     # an hour later in ET, which still lands after each batch.
-    - cron: "5 23 * * *"   # 7:05 PM ET  — after the 6 PM batch (biggest)
-    - cron: "5 2 * * *"    # 10:05 PM ET — after the 8–9 PM batch
-    - cron: "5 15 * * *"   # 11:05 AM ET — after the 10 AM batch
-    - cron: "5 7 * * *"    # 3:05 AM ET
-    - cron: "5 10 * * *"   # 6:05 AM ET
-  workflow_dispatch:       # "Run workflow" button in the Actions tab
+    - cron: "23 23 * * *"   # 7:05 PM ET  — after the 6 PM batch (biggest)
+    - cron: "23 2 * * *"    # 10:05 PM ET — after the 8–9 PM batch
+    - cron: "23 15 * * *"   # 11:05 AM ET — after the 10 AM batch
+    - cron: "23 7 * * *"    # 3:05 AM ET
+    - cron: "23 10 * * *"   # 6:05 AM ET
+  workflow_dispatch:       # "Run workflow" button; also kicked by the Claude routine each slot,
+                           # because GitHub cron is best-effort and sometimes skips a run
   push:
     branches: [main]
     paths: [job_check.py, site/index.html, .github/workflows/refresh.yml]
